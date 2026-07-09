@@ -8,32 +8,48 @@ namespace AbySalto.CartService.Services;
 public class CartService : ICartService
 {
     private readonly CartDbContext _context;
+    private readonly ILogger<CartService> _logger;
 
-    public CartService(CartDbContext context)
+    public CartService(
+        CartDbContext context,
+        ILogger<CartService> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     public async Task<CartResponse?> GetCartAsync(string userId)
     {
-        var cart = await _context.Carts
-            .Include(c => c.Items)
-            .FirstOrDefaultAsync(c => c.UserId == userId);
+        _logger.LogInformation("Getting cart for user {UserId}", userId);
 
-        if (cart == null)
-            return null;
-
-        return MapToResponse(cart);
-    }
-
-    public async Task<CartResponse> AddItemAsync(string userId, AddCartItemRequest request)
-    {
         var cart = await _context.Carts
             .Include(c => c.Items)
             .FirstOrDefaultAsync(c => c.UserId == userId);
 
         if (cart == null)
         {
+            _logger.LogWarning("Cart not found for user {UserId}", userId);
+            return null;
+        }
+
+        return MapToResponse(cart);
+    }
+
+    public async Task<CartResponse> AddItemAsync(string userId, AddCartItemRequest request)
+    {
+        _logger.LogInformation(
+            "Adding product {ProductId} to cart for user {UserId}",
+            request.ProductId,
+            userId);
+
+        var cart = await _context.Carts
+            .Include(c => c.Items)
+            .FirstOrDefaultAsync(c => c.UserId == userId);
+
+        if (cart == null)
+        {
+            _logger.LogInformation("Creating new cart for user {UserId}", userId);
+
             cart = new Cart
             {
                 Id = Guid.NewGuid(),
@@ -48,6 +64,11 @@ public class CartService : ICartService
         if (existingItem != null)
         {
             existingItem.Quantity += request.Quantity;
+
+            _logger.LogInformation(
+                "Updated quantity for existing product {ProductId} in cart for user {UserId}",
+                request.ProductId,
+                userId);
         }
         else
         {
@@ -59,6 +80,11 @@ public class CartService : ICartService
                 Quantity = request.Quantity,
                 UnitPrice = request.UnitPrice
             });
+
+            _logger.LogInformation(
+                "Added new product {ProductId} to cart for user {UserId}",
+                request.ProductId,
+                userId);
         }
 
         await _context.SaveChangesAsync();
@@ -71,17 +97,32 @@ public class CartService : ICartService
         Guid itemId,
         UpdateCartItemRequest request)
     {
+        _logger.LogInformation(
+            "Updating item {ItemId} quantity for user {UserId}",
+            itemId,
+            userId);
+
         var cart = await _context.Carts
             .Include(c => c.Items)
             .FirstOrDefaultAsync(c => c.UserId == userId);
 
         if (cart == null)
+        {
+            _logger.LogWarning("Cart not found for user {UserId}", userId);
             return false;
+        }
 
         var item = cart.Items.FirstOrDefault(i => i.Id == itemId);
 
         if (item == null)
+        {
+            _logger.LogWarning(
+                "Item {ItemId} not found in cart for user {UserId}",
+                itemId,
+                userId);
+
             return false;
+        }
 
         item.Quantity = request.Quantity;
 
@@ -92,17 +133,32 @@ public class CartService : ICartService
 
     public async Task<bool> RemoveItemAsync(string userId, Guid itemId)
     {
+        _logger.LogInformation(
+            "Removing item {ItemId} from cart for user {UserId}",
+            itemId,
+            userId);
+
         var cart = await _context.Carts
             .Include(c => c.Items)
             .FirstOrDefaultAsync(c => c.UserId == userId);
 
         if (cart == null)
+        {
+            _logger.LogWarning("Cart not found for user {UserId}", userId);
             return false;
+        }
 
         var item = cart.Items.FirstOrDefault(i => i.Id == itemId);
 
         if (item == null)
+        {
+            _logger.LogWarning(
+                "Item {ItemId} not found in cart for user {UserId}",
+                itemId,
+                userId);
+
             return false;
+        }
 
         _context.CartItems.Remove(item);
 
@@ -113,12 +169,17 @@ public class CartService : ICartService
 
     public async Task<bool> ClearCartAsync(string userId)
     {
+        _logger.LogInformation("Clearing cart for user {UserId}", userId);
+
         var cart = await _context.Carts
             .Include(c => c.Items)
             .FirstOrDefaultAsync(c => c.UserId == userId);
 
         if (cart == null)
+        {
+            _logger.LogWarning("Cart not found for user {UserId}", userId);
             return false;
+        }
 
         _context.CartItems.RemoveRange(cart.Items);
 
