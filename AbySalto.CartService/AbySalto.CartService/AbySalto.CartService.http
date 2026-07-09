@@ -1,0 +1,6 @@
+@AbySalto.CartService_HostAddress = http://localhost:5236
+
+GET {{AbySalto.CartService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
