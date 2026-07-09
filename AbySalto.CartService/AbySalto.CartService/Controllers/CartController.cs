@@ -18,6 +18,9 @@ public class CartController : ControllerBase
     [HttpGet("{userId}")]
     public async Task<IActionResult> GetCart(string userId)
     {
+        if (string.IsNullOrWhiteSpace(userId))
+            return BadRequest("UserId is required.");
+
         var cart = await _cartService.GetCartAsync(userId);
 
         if (cart == null)
@@ -29,6 +32,9 @@ public class CartController : ControllerBase
     [HttpPost("{userId}/items")]
     public async Task<IActionResult> AddItem(string userId, AddCartItemRequest request)
     {
+        if (string.IsNullOrWhiteSpace(userId))
+            return BadRequest("UserId is required.");
+
         var cart = await _cartService.AddItemAsync(userId, request);
 
         return Ok(cart);
@@ -40,6 +46,9 @@ public class CartController : ControllerBase
         Guid itemId,
         UpdateCartItemRequest request)
     {
+        if (string.IsNullOrWhiteSpace(userId))
+            return BadRequest("UserId is required.");
+
         var updated = await _cartService.UpdateItemQuantityAsync(userId, itemId, request);
 
         if (!updated)
@@ -51,6 +60,9 @@ public class CartController : ControllerBase
     [HttpDelete("{userId}/items/{itemId:guid}")]
     public async Task<IActionResult> RemoveItem(string userId, Guid itemId)
     {
+        if (string.IsNullOrWhiteSpace(userId))
+            return BadRequest("UserId is required.");
+
         var removed = await _cartService.RemoveItemAsync(userId, itemId);
 
         if (!removed)
@@ -62,6 +74,9 @@ public class CartController : ControllerBase
     [HttpDelete("{userId}/clear")]
     public async Task<IActionResult> ClearCart(string userId)
     {
+        if (string.IsNullOrWhiteSpace(userId))
+            return BadRequest("UserId is required.");
+
         var cleared = await _cartService.ClearCartAsync(userId);
 
         if (!cleared)

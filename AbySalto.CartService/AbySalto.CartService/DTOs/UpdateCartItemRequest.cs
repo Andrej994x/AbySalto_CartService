@@ -4,6 +4,6 @@ namespace AbySalto.CartService.DTOs;
 
 public class UpdateCartItemRequest
 {
-    [Range(1, 999)]
+    [Range(1, int.MaxValue)]
     public int Quantity { get; set; }
 }
