@@ -1,6 +1,7 @@
 using AbySalto.CartService.Data;
 using Microsoft.EntityFrameworkCore;
 using AbySalto.CartService.Services;
+using AbySalto.CartService.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +17,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 // Configure pipeline
 if (app.Environment.IsDevelopment())
